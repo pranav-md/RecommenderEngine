@@ -8,9 +8,9 @@ object HelloBigData {
     val spark = SparkSession.builder.appName("Simple Application").master("local[*]").getOrCreate()
 
     val logData = spark.read.textFile(logFile).cache()
-    val tony = logData.filter(line => line.contains("avenger")).count()
-    val steve = logData.filter(line => line.contains("thanos")).count()
-    println(s"Lines with avenger: $tony, Lines with thanos: $steve")
+    val tony = logData.filter(line => line.contains("tony")).count()
+    val thanos = logData.filter(line => line.contains("thanos")).count()
+    println(s"Lines with avenger: $tony, Lines with thanos: $thanos")
     spark.stop()
   }
 
