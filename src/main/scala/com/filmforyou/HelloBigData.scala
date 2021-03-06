@@ -1,4 +1,4 @@
-package com.bigdatasample
+package com.filmforyou
 
 import org.apache.spark.sql.SparkSession
 

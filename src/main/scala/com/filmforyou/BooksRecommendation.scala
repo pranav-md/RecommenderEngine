@@ -1,47 +1,61 @@
-package com.bigdatasample
+package com.filmforyou
 
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.mllib.recommendation.ALS
-import org.apache.spark.mllib.recommendation.MatrixFactorizationModel
-import org.apache.spark.mllib.recommendation.Rating
+import org.apache.spark.mllib.recommendation.{ALS, MatrixFactorizationModel, Rating}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SparkSession
 
-
-object FilmRecommendation extends App {
+object BooksRecommendation extends App{
 
   val ratigsFile = "data/goodreads_ratings.csv"
-  val spark = SparkSession.builder.appName("Film recommendation engine").master("local[*]").getOrCreate()
+  val spark = SparkSession.builder.appName("Book recommendation engine").master("local[*]").getOrCreate()
 
   val df1 = spark.read.format("com.databricks.spark.csv").option("header", true).load(ratigsFile)
 
   val ratingsDF = df1.select(df1.col("user_id"),
-                             df1.col("movie_id"),
-                             df1.col("rating"))
+    df1.col("book_id"),
+    df1.col("rating"))
   //val hi= ratingsDF.show(false)
 
-//
-//  val booksFile = "data/goodreads_books.csv"
-//
-//  val df2 = spark.read.format("com.databricks.spark.csv").option("header", "true").load(booksFile)
-//
-//  val booksDF = df2.select(df2.col("book_id"),
-//                            df2.col("original_title"),
-//                            df2.col("title"))
-//
-//
-//
-//  ratingsDF.createOrReplaceTempView("ratings")
-//
-//  booksDF.createOrReplaceTempView("books")
+  //
+  //  val booksFile = "data/goodreads_books.csv"
+  //
+  //  val df2 = spark.read.format("com.databricks.spark.csv").option("header", "true").load(booksFile)
+  //
+  //  val booksDF = df2.select(df2.col("book_id"),
+  //                            df2.col("original_title"),
+  //                            df2.col("title"))
+  //
+  //
+  //
+  //  ratingsDF.createOrReplaceTempView("ratings")
+  //
+  //  booksDF.createOrReplaceTempView("books")
 
 
-//  val numRatings = ratingsDF.count()
-//
-//  val numUsers = ratingsDF.select(ratingsDF.col("user_id")).distinct().count()
-//
-//  val numBooks = ratingsDF.select(ratingsDF.col("movie_id")).distinct().count()
+  //  val numRatings = ratingsDF.count()
+  //
+  //  val numUsers = ratingsDF.select(ratingsDF.col("user_id")).distinct().count()
+  //
+  //  val numBooks = ratingsDF.select(ratingsDF.col("movie_id")).distinct().count()
 
   userProductMatrixALS
+
+  def booksNumUsersRated():Unit={
+
+    val results = spark.sql("select books.title, bookrates.maxr, bookrates.minr, bookrates.cntu "
+
+      + "from(SELECT ratings.book_id ,max(ratings.rating) as maxr,"
+
+      + "min(ratings.rating) as minr,count(distinct user_id) as cntu "
+
+      + "FROM ratings group by ratings.book_id) bookrates "
+
+      + "join books on bookrates.book_id =books.book_id "
+
+      + "order by bookrates.cntu desc")
+
+    println("RESULTS:  "+ results.show(true))
+  }
 
   def userProductMatrixALS:Unit={
 
@@ -53,7 +67,7 @@ object FilmRecommendation extends App {
     val seed = 12345L
     val implicitPrefs = true
     val ratingsDF = df1.select(df1.col("user_id"),
-      df1.col("movie_id"),
+      df1.col("book_id"),
       df1.col("rating"))
 
     val splits = ratingsDF.randomSplit(Array(0.75, 0.25), seed = 12345L)
@@ -74,7 +88,7 @@ object FilmRecommendation extends App {
     })
 
 
-  //  println("HYPER PARAMETERS ARE : "+ getHyperParams(ratingsRDD, testingRDD))
+    //  println("HYPER PARAMETERS ARE : "+ getHyperParams(ratingsRDD, testingRDD))
 
     val model = new ALS().setIterations(numIterations) .setBlocks(block).setAlpha(alpha)
       .setLambda(lambda)
@@ -83,11 +97,11 @@ object FilmRecommendation extends App {
       .setImplicitPrefs(implicitPrefs)
       .run(ratingsRDD)
 
-    println("Rating:(UserID, MovieID, Rating)")
+    println("Rating:(UserID, BookID, Rating)")
 
     println("----------------------------------")
 
-    val topRecsForUser = model.recommendProducts(611, 10)
+    val topRecsForUser = model.recommendProducts(60000, 10)
     for (rating <- topRecsForUser)
     {
       println(rating.toString())
@@ -96,7 +110,7 @@ object FilmRecommendation extends App {
     println("----------------------------------")
   }
 
- // def hyperParameterTuning()
+  // def hyperParameterTuning()
 
   def getHyperParams(ratingsRDD: RDD[Rating], testRDD: RDD[Rating]): (Int, Double)={
     val numIterations = 15
@@ -146,5 +160,3 @@ object FilmRecommendation extends App {
     math.sqrt(predictionsAndRatings.map(x => (x._1 - x._2) * (x._1 - x._2)).mean())
   }
 }
-
-

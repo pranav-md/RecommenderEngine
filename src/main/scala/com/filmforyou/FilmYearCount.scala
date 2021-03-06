@@ -1,8 +1,8 @@
-package com.bigdatasample
+package com.filmforyou
 
 import java.util.Calendar
 
-import com.bigdatasample.HelloBigData.getClass
+import com.filmforyou.HelloBigData.getClass
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
